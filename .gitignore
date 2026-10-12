@@ -43,3 +43,7 @@ next-env.d.ts
 npm-debug.log*
 /core
 /core.[0-9]*
+
+# eve local artifacts (spike, Task 1)
+.eve/
+.output/

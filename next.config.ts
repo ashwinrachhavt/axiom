@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withEve } from "eve/next";
 
 const nextConfig: NextConfig = {
   async redirects() {
@@ -23,4 +24,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Spike (Task 1): mounts the throwaway eve agent at /eve/alfred/v1/*.
+// Verified API shape: withEve(config, { agents: { <name>: { root } } }).
+export default withEve(nextConfig, { agents: { alfred: "./eve/alfred" } });

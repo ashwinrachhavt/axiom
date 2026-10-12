@@ -1,0 +1,7 @@
+{
+  "name": "alfred",
+  "private": true,
+  "dependencies": {
+    "eve": "^0.76.3"
+  }
+}
