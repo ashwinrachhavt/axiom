@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Empty, Panel, Screen } from "@/components/workspace/ui";
 import { getAuthContext } from "@/lib/auth";
 import { WORK_OPEN_STATUSES, WORK_PRIORITIES, type WorkRow } from "@/domains/work/queries";
@@ -51,7 +51,7 @@ export async function NeonTasks({
   raw?: RawSearchParams;
 }) {
   // Per-user data: render at request time, never prerender.
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const scope = scopeOf(show);
   const statusChoices = scope === "today" ? (["ready", "in_progress"] as const) : scope === "open" ? WORK_OPEN_STATUSES : ([] as const);
@@ -79,10 +79,14 @@ export async function NeonTasks({
     getActiveFocusSessionForPage(auth),
   ]);
   // Where the live session's task was last picked up - the start-moment
-  // continuity cue; null when no closed session left a next step.
-  const lastHandoff = activeSession?.taskId ? await getLastTaskHandoffForPage(auth, activeSession.taskId) : null;
-  const focusHistory = detail ? await listFocusHistoryForPage(auth, 10, detail.task.id) : [];
-  const provenance = detail ? await getTaskProvenance(auth, detail.task.id) : [];
+  // continuity cue; null when no closed session left a next step. The handoff,
+  // the task's focus history and its provenance depend on the reads above but
+  // not on each other, so they go out together.
+  const [lastHandoff, focusHistory, provenance] = await Promise.all([
+    activeSession?.taskId ? getLastTaskHandoffForPage(auth, activeSession.taskId) : null,
+    detail ? listFocusHistoryForPage(auth, 10, detail.task.id) : [],
+    detail ? getTaskProvenance(auth, detail.task.id) : [],
+  ]);
   const candidates = detail ? openRows.filter((r) => r.id !== detail.task.id).map((r) => ({ id: r.id, title: r.title })) : [];
   const tab = (value: Scope, label: string) => (
     <Link

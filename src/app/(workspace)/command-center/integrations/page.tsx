@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Suspense } from "react";
 import { Screen } from "@/components/workspace/ui";
 import { listConnectors } from "@/domains/integrations/queries";
@@ -28,7 +28,7 @@ const CONNECTION_RESULT: Record<string, string> = {
 };
 
 async function Connectors({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  await connection();
+  await io();
   const query = await searchParams;
   const connectionResult = typeof query.connection === "string" ? query.connection : null;
   const resultMessage = connectionResult ? CONNECTION_RESULT[connectionResult] ?? "The connection did not complete." : null;

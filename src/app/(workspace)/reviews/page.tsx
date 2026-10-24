@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Suspense } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { redirectPastEnd } from "@/components/list/clamp";
@@ -54,7 +54,7 @@ const riskLabel: Record<string, string> = {
 };
 
 async function Reviews({ searchParams }: { searchParams: Promise<RawSearchParams> }) {
-  await connection();
+  await io();
   if (!process.env.DATABASE_URL?.trim()) {
     return (
       <Screen title="Reviews">

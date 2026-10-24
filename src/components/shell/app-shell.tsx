@@ -20,6 +20,11 @@ const subscribeToHydration = () => () => {};
  * A client component only because the browser-preview path is derived from
  * the pathname; the layout above it stays a server component, so the auth
  * guard there is unaffected.
+ *
+ * The conversation is home, and home reads like a chat screen (z.ai / Linear
+ * Agent): the header's breadcrumb row restates the rail's active item on the
+ * one destination with no page heading of its own, so it yields its row there.
+ * The composer is the page.
  */
 export function AppShell({ children, storageScope = "anonymous", clerkConfigured = false }: { children: ReactNode; storageScope?: string; clerkConfigured?: boolean }) {
   const pathname = usePathname();
@@ -27,6 +32,7 @@ export function AppShell({ children, storageScope = "anonymous", clerkConfigured
   // Browser-preview records live in localStorage; rendering the server's empty
   // snapshot first flashed stale rows before the stored workspace replaced them.
   const waitingForStorage = !hydrated && isBrowserPreviewPath(pathname);
+  const headerless = pathname === "/alfred" || pathname.startsWith("/alfred/");
 
   return (
     <WorkspaceProvider key={storageScope} storageScope={storageScope}>
@@ -34,7 +40,7 @@ export function AppShell({ children, storageScope = "anonymous", clerkConfigured
       <div className="flex min-h-dvh flex-1">
         <SideNav />
         <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar clerkConfigured={clerkConfigured} />
+          {!headerless ? <TopBar clerkConfigured={clerkConfigured} /> : null}
           <main id="content" tabIndex={-1} className="flex min-w-0 flex-1 flex-col">
             <Suspense fallback={null}><PreviewBanner /></Suspense>
             {/* Preview mutations are reachable from canonical routes, so the storage warning must be too. It renders null when empty. */}

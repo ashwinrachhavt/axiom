@@ -41,7 +41,7 @@ test("the Assistant home carries only the new conversation copy", async ({ page 
   }
 });
 
-test("the rail leads with Assistant, then Today", async ({ page }) => {
+test("the rail leads with Polymath, then Today", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/alfred");
   // The home streams: the shell hydrates and the Suspense boundary swaps its
@@ -56,7 +56,7 @@ test("the rail leads with Assistant, then Today", async ({ page }) => {
     .getByRole("navigation", { name: "Workspace", exact: true })
     .locator("a[aria-label]")
     .evaluateAll((links) => links.map((link) => link.getAttribute("aria-label")));
-  expect(labels.slice(0, 2)).toEqual(["Assistant", "Today"]);
+  expect(labels.slice(0, 2)).toEqual(["Polymath", "Today"]);
 });
 
 /*
@@ -96,7 +96,11 @@ test("rail destinations are real screens", async ({ page }) => {
     // the shell's content main so navigation never races the skeleton.
     await expect(page.locator("#content h1")).toHaveCount(1);
     await expect(page.locator("#content")).not.toContainText("Nothing is here");
-    await expect(page.getByRole("navigation", { name: "Workspace", exact: true }).getByRole("link", { name: destination.label, exact: true })).toHaveAttribute("aria-current", "page");
+    // Scope to the aria-labeled destination link: the rail's wordmark is also
+    // a link whose accessible name is "Polymath" (from its visible text), and
+    // since b5b1d26 renamed the first destination to Polymath a plain
+    // getByRole('link', name) collides between the two.
+    await expect(page.getByRole("navigation", { name: "Workspace", exact: true }).getByLabel(destination.label, { exact: true })).toHaveAttribute("aria-current", "page");
   }
   expect(errors).toEqual([]);
 });

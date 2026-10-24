@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Suspense } from "react";
 import { getDefaultProfile } from "@/domains/agents/queries";
 import { getPreferences } from "@/domains/identity/preferences";
@@ -27,7 +27,7 @@ export const metadata = { title: "Settings · Polymath" };
  */
 
 export async function SettingsSurface() {
-  await connection();
+  await io();
   const capabilities = capabilityStatus();
   if (!clerkConfigured) {
     return <Settings capabilities={capabilities} browserPreview />;
@@ -41,10 +41,11 @@ export async function SettingsSurface() {
 }
 
 /*
- * connection() has to sit inside a Suspense boundary, not just inside the
- * route: cacheComponents prerenders the shell and rejects uncached data that
- * blocks it. Bare `await connection()` in the page default still logs
- * "encountered uncached data during prerendering" and stalls navigation.
+ * io() has to sit inside a Suspense boundary, not just inside the route:
+ * cacheComponents prerenders the shell and rejects uncached data that blocks
+ * it. Bare `await io()` in the page default still logs "encountered uncached
+ * data during prerendering" and stalls navigation. Unlike connection(), io()
+ * still permits the session App Shell to be prefetched.
  */
 export default function SettingsPage() {
   return (

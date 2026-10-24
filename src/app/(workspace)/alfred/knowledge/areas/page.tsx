@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { listAreas } from "@/domains/knowledge/area-queries";
 import { getAuthContext } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
@@ -22,7 +22,7 @@ function ratio(hit: number, total: number): string {
 }
 
 export default async function AreasPage() {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const areas = await listAreas(auth);
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Screen } from "@/components/workspace/ui";
 import { getAuthContext } from "@/lib/auth";
 import { listEventsBetween } from "@/domains/calendar/queries";
@@ -23,7 +23,7 @@ import { WeekGrid } from "./week-grid";
 const DAY = 86_400_000;
 
 export async function NeonCalendar({ date }: { date?: string }) {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const { timezone, weekStart } = await getPreferences(auth);
   const today = todayKeyInTimezone(timezone);

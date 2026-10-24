@@ -1,6 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { redirect } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
@@ -19,11 +19,11 @@ import type { PickableSkill } from "./skills/slash-skill-menu";
 import { getProfileModelPolicy } from "@/domains/agents/queries";
 import { availableModels, resolveModelId } from "@/domains/agents/models";
 
-export const metadata = { title: "Assistant · Polymath" };
+export const metadata = { title: "Polymath" };
 
 /*
- * The Assistant is home: one composer, then the conversations that already
- * exist. The rail names the destination, so the page opens with the question
+ * Polymath is home: one composer, then the conversations that already exist.
+ * The rail names the destination, so the page opens with the question
  * rather than a title restating it (agents/design.md: no oversized H1s, the
  * greeting is the whole of the header here).
  *
@@ -34,7 +34,7 @@ export const metadata = { title: "Assistant · Polymath" };
 
 export async function AlfredSurface() {
   // Per-request data: auth resolution upserts identity and stamps now().
-  await connection();
+  await io();
   if (!process.env.DATABASE_URL?.trim()) {
     return (
       <Home>
@@ -55,19 +55,26 @@ export async function AlfredSurface() {
   if (!(await isWorkspaceOnboarded(auth.workspaceId))) {
     redirect("/onboarding");
   }
-  // One query feeds both views: the menu is the history, so it needs more than
-  // the five rows shown under the composer. Fifty is a bounded read, not the
-  // whole table, so the page stays cheap as history grows.
-  const runs = await listRecentRuns(auth.workspaceId, 50);
-  // Conversation threads (the retired Conversations surface) stay discoverable
-  // inside the chat history control: same query bound as the run history, and
-  // the thread pages themselves are untouched so every old link keeps working.
-  const conversationThreads = await listConversations(auth);
+  // The history reads and the model policy are independent: issue them together
+  // so the page costs one round trip per query rather than one per query in
+  // sequence.
+  const [runs, conversationThreads, skillRows, modelPolicy] = await Promise.all([
+    // One query feeds both views: the menu is the history, so it needs more than
+    // the five rows shown under the composer. Fifty is a bounded read, not the
+    // whole table, so the page stays cheap as history grows.
+    listRecentRuns(auth.workspaceId, 50),
+    // Conversation threads (the retired Conversations surface) stay discoverable
+    // inside the chat history control: same query bound as the run history, and
+    // the thread pages themselves are untouched so every old link keeps working.
+    listConversations(auth),
+    // Only enabled skills can be pinned; the engine refuses anything else.
+    listSkills(auth, { enabled: true }),
+    getProfileModelPolicy(auth.workspaceId, "alfred"),
+  ]);
   // The dropdown is the complete history; the list under the composer is the
   // five most recent. One array, two views.
   const recent = runs.slice(0, 5);
-  // Only enabled skills can be pinned; the engine refuses anything else.
-  const skills: PickableSkill[] = (await listSkills(auth, { enabled: true })).map((skill) => ({
+  const skills: PickableSkill[] = skillRows.map((skill) => ({
     id: skill.id,
     name: skill.name,
     description: skill.description,
@@ -76,7 +83,6 @@ export async function AlfredSurface() {
   // Only models whose provider key is present: offering one that cannot run
   // would freeze a model into a run that then fails on its first step.
   const models = availableModels();
-  const modelPolicy = await getProfileModelPolicy(auth.workspaceId, "alfred");
   const stored = (modelPolicy as { primary?: unknown } | null)?.primary;
   const currentModel = resolveModelId(stored);
 
@@ -166,7 +172,7 @@ export default function AlfredPage() {
 
 function AlfredSkeleton() {
   return (
-    <div role="status" aria-label="Loading assistant" className="page-content flex flex-1 flex-col gap-10 pt-16">
+    <div role="status" aria-label="Loading Polymath" className="page-content flex flex-1 flex-col gap-10 pt-16">
       <Skeleton className="mx-auto h-7 w-80 max-w-full" />
       <Skeleton className="mx-auto h-24 w-full max-w-2xl" />
     </div>

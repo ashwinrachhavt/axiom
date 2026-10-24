@@ -42,11 +42,11 @@ export type Destination = {
   group: AppSlug | "shared";
 };
 
-/** Array order is rail order. Assistant leads because a conversation is the first move. */
+/** Array order is rail order. The Polymath conversation leads because a conversation is the first move. */
 export const destinations: Destination[] = [
   {
     href: "/alfred",
-    label: "Assistant",
+    label: "Polymath",
     purpose: "Start or continue a conversation.",
     icon: Sparkles,
     group: "alfred",

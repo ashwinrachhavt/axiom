@@ -462,3 +462,28 @@ transition-duration: 0.01ms !important;
     display: none;
   }
 }
+
+@keyframes file-chip-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+.file-chip-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, var(--color-foreground, currentColor), transparent);
+  opacity: 0.35;
+  animation: file-chip-shimmer 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .file-chip-shimmer::after {
+    animation: none;
+  }
+}

@@ -19,12 +19,14 @@ export type ThreadEntry = {
   kind: "user" | "assistant" | "reasoning" | "cancelled" | "status";
   text: string;
   at: Date;
+  /** The owner's like/dislike on an assistant message; null when not given. */
+  feedback?: "up" | "down" | null;
 };
 
 const TERMINAL = ["succeeded", "failed", "cancelled"] as const;
 export const isFinished = (state: string) => (TERMINAL as readonly string[]).includes(state);
 
-function toEntry(row: { sequence: number; type: string; data: unknown; createdAt: Date }): ThreadEntry | null {
+function toEntry(row: { sequence: number; type: string; data: unknown; createdAt: Date; feedback?: string | null }): ThreadEntry | null {
   const data = (row.data ?? {}) as { role?: string; content?: unknown; detail?: unknown; text?: unknown };
   if (row.type === "message" && typeof data.content === "string") {
     return {
@@ -32,6 +34,7 @@ function toEntry(row: { sequence: number; type: string; data: unknown; createdAt
       kind: data.role === "assistant" ? "assistant" : "user",
       text: data.content,
       at: row.createdAt,
+      feedback: data.role === "assistant" ? ((row.feedback as "up" | "down" | null) ?? null) : undefined,
     };
   }
   // The model's visible rationale, persisted by the bridge so a reload keeps
@@ -59,7 +62,7 @@ export async function listThreads(workspaceId: string, runIds: string[]): Promis
   const out = new Map<string, ThreadEntry[]>();
   if (runIds.length === 0) return out;
   const rows = await db
-    .select({ runId: runEvents.runId, sequence: runEvents.sequence, type: runEvents.type, data: runEvents.data, createdAt: runEvents.createdAt })
+    .select({ runId: runEvents.runId, sequence: runEvents.sequence, type: runEvents.type, data: runEvents.data, createdAt: runEvents.createdAt, feedback: runEvents.feedback })
     .from(runEvents)
     .where(and(eq(runEvents.workspaceId, workspaceId), inArray(runEvents.runId, runIds)))
     .orderBy(asc(runEvents.runId), asc(runEvents.sequence));

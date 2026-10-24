@@ -9,7 +9,8 @@ import { recordSource } from "@/domains/knowledge/sources";
 import { THREAD_CHANGED_TOPIC, threadChangedHandler } from "@/domains/knowledge/thread-graph";
 import { youtubeHandlers } from "@/domains/knowledge/youtube-handler";
 import { urlContentRequestedHandler } from "@/domains/capture/url-content-handler";
-import { CAPTURE_URL_CONTENT_TOPIC } from "@/domains/capture/commands";
+import { CAPTURE_ENRICHMENT_TOPIC, CAPTURE_URL_CONTENT_TOPIC } from "@/domains/capture/commands";
+import { captureEnrichmentRequestedHandler } from "@/domains/capture/enrichment-handler";
 import { isTerminalCrawlStatus, pollCrawl, submitCrawl } from "@/integrations/firecrawl/client";
 import { memberships } from "@/domains/identity/schema";
 import type { AuthContext } from "@/domains/identity/resolve";
@@ -282,6 +283,7 @@ export function outboxHandlers(): Record<string, OutboxHandler> {
     ...youtubeHandlers,
     [THREAD_CHANGED_TOPIC]: threadChangedHandler(workspaceOwnerAuth),
     [CAPTURE_URL_CONTENT_TOPIC]: urlContentRequestedHandler,
+    [CAPTURE_ENRICHMENT_TOPIC]: captureEnrichmentRequestedHandler,
   };
   return handlers;
 }

@@ -1,12 +1,15 @@
 
 /*
- * The only module that talks to Composio (D09). It reads two kinds of env:
- * COMPOSIO_API_KEY (the project key; the token never leaves Composio) and
- * COMPOSIO_AUTH_CONFIG_<PROVIDER> per provider (the owner creates auth
- * configs in the Composio dashboard; ids are deployment config, not secrets
- * we can invent). Without them the connect flow reports "not configured"
- * instead of failing sideways. API: POST /api/v3.1/connected_accounts/link
- * (docs.composio.dev connected-accounts reference).
+ * The only module that talks to Composio (D09). It reads COMPOSIO_API_KEY
+ * (the project key; the token never leaves Composio). Per-provider auth
+ * config ids are NOT deployment config: the project key is enough to list
+ * them from the Composio API, so the server resolves toolkit slug → auth
+ * config id itself and caches the result. COMPOSIO_AUTH_CONFIG_<PROVIDER>
+ * survives only as a manual override for a project with several configs for
+ * one toolkit. Without the API key the connect flow reports "not
+ * configured" instead of failing sideways. API: POST
+ * /api/v3.1/connected_accounts/link (docs.composio.dev connected-accounts
+ * reference).
  */
 
 const API_BASE = "https://backend.composio.dev/api/v3.1";
@@ -76,31 +79,105 @@ export function authConfigEnvName(provider: string) {
   return `COMPOSIO_AUTH_CONFIG_${provider.toUpperCase().replace(/-/g, "_")}`;
 }
 
-export function isComposioConfigured(provider: string): boolean {
-  return Boolean(process.env.COMPOSIO_API_KEY && process.env[authConfigEnvName(provider)]);
+/*
+ * Toolkit slug → provider spelling. Catalog providers use kebab-case
+ * ("google-calendar"); Composio slugs are lowercase concatenated
+ * ("googlecalendar"). Discovery matches on the concatenated form, so an
+ * override env name keeps its own mapping via authConfigEnvName.
+ */
+export function composioToolkitSlug(provider: string) {
+  return provider.replace(/-/g, "");
+}
+
+type DiscoveredConfigs = { at: number; bySlug: Map<string, string> };
+let discoveryCache: DiscoveredConfigs | null = null;
+const DISCOVERY_TTL_MS = 5 * 60_000;
+
+async function discoverAuthConfigs(apiKey: string): Promise<DiscoveredConfigs> {
+  if (discoveryCache && Date.now() - discoveryCache.at < DISCOVERY_TTL_MS) {
+    return discoveryCache;
+  }
+  const response = await fetch(`${API_BASE}/auth_configs?limit=100`, {
+    headers: { "x-api-key": apiKey },
+  });
+  if (!response.ok) {
+    throw new ComposioLinkError(response.status);
+  }
+  const body = (await response.json()) as {
+    items?: Array<{ id: string; toolkit?: { slug?: string }; status?: string }>;
+  };
+  const bySlug = new Map<string, string>();
+  for (const item of body.items ?? []) {
+    const slug = item.toolkit?.slug;
+    // The newest config wins for a duplicated toolkit; items arrive newest-first.
+    if (slug && item.status === "ENABLED" && !bySlug.has(slug)) {
+      bySlug.set(slug, item.id);
+    }
+  }
+  discoveryCache = { at: Date.now(), bySlug };
+  return discoveryCache;
+}
+
+/** Test seam: drop the cached discovery so a stubbed fetch is exercised. */
+export function resetAuthConfigDiscovery() {
+  discoveryCache = null;
+}
+
+/**
+ * The auth config id for a provider: the manual override env var wins, then
+ * the project's own configs discovered through the API. Null when the API
+ * key is missing or the project has no config for the toolkit yet — callers
+ * turn that into "not configured" copy rather than guessing an id.
+ */
+export async function resolveAuthConfigId(provider: string): Promise<string | null> {
+  const override = process.env[authConfigEnvName(provider)];
+  if (override) return override;
+  const apiKey = process.env.COMPOSIO_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const { bySlug } = await discoverAuthConfigs(apiKey);
+    return bySlug.get(composioToolkitSlug(provider)) ?? null;
+  } catch {
+    // Discovery is a convenience over an explicitly-set API key; a transient
+    // Composio outage must not turn a configured deployment into a broken
+    // connect page. Fail closed to "not configured" for this call only.
+    return null;
+  }
+}
+
+/** True when the deployment can attempt a link for this provider at all. */
+export async function isComposioConfigured(provider: string): Promise<boolean> {
+  return (await resolveAuthConfigId(provider)) !== null;
 }
 
 /** Creates the hosted-auth link session. Throws ComposioNotConfiguredError when env is missing. */
 export async function createHostedConnectLink(input: {
   provider: string;
   userId: string;
-  alias: string;
   callbackUrl: string;
 }): Promise<{ redirectUrl: string; connectedAccountId: string; expiresAt: string }> {
   const apiKey = process.env.COMPOSIO_API_KEY;
-  const authConfigId = process.env[authConfigEnvName(input.provider)];
+  const authConfigId = await resolveAuthConfigId(input.provider);
   if (!apiKey || !authConfigId) {
     throw new ComposioNotConfiguredError(
       `Composio is not configured for "${input.provider}" on this deployment yet.`,
     );
   }
+  /*
+   * No `alias` in this payload. Composio rejects a link whose alias is already
+   * taken by ANY connected account under the same user_id (400, code 600) —
+   * including accounts Polymath's database no longer knows about (a local
+   * reset, or a revoked-local account that stays live on Composio's side).
+   * The local alias is workspace bookkeeping only; the callback resolves by
+   * state token and the account by connected_account_id, so the hosted flow
+   * never needed the name.
+   */
   const response = await fetch(`${API_BASE}/connected_accounts/link`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": apiKey },
     body: JSON.stringify({
       auth_config_id: authConfigId,
       user_id: input.userId,
-      alias: input.alias,
       callback_url: input.callbackUrl,
     }),
   });

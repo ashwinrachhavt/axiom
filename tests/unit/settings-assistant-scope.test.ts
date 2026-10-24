@@ -11,7 +11,7 @@ import { describe, expect, it, vi } from "vitest";
  */
 
 vi.mock("next/server", () => ({ connection: async () => undefined }));
-vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), io: async () => undefined }));
 vi.mock("@/lib/clerk", () => ({ clerkConfigured: true, devAuthBypass: false }));
 const authHolder: { ctx: { userId: string; workspaceId: string; role: "owner" | "viewer" } } = {
   ctx: { userId: "usr_1", workspaceId: "ws_1", role: "viewer" },

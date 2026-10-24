@@ -66,6 +66,16 @@ export const captures = pgTable(
     url: text("url"),
     blobId: uuid("blob_id").references(() => blobObjects.id, { onDelete: "set null" }),
     processingState: captureProcessingState("processing_state").notNull().default("unprocessed"),
+    /** Suggested by enrichment; never overwrites a person-supplied title. */
+    title: text("title"),
+    /** Tier 0 output: normalized text. raw_payload stays the immutable original. */
+    cleanText: text("clean_text"),
+    /** Tier 1 verdict from regex heuristics: prose, code, list, url, log, contact. */
+    structure: text("structure"),
+    /** Tier 2 LLM reading: one of the capture domains (see classification.ts). */
+    domain: text("domain"),
+    /** Tier 2 LLM reading: free-form topic tags, capped. */
+    tags: jsonb("tags"),
     /** Set once the capture becomes a canonical record; the lineage edge. */
     convertedType: text("converted_type"),
     convertedId: uuid("converted_id"),

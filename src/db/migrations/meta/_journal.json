@@ -484,6 +484,20 @@
       "tag": "0242_reward_ledger_note",
       "when": 1792757100000,
       "breakpoints": true
+    },
+    {
+      "idx": 243,
+      "version": "7",
+      "tag": "0243_capture_enrichment",
+      "when": 1792797488000,
+      "breakpoints": true
+    },
+    {
+      "idx": 244,
+      "version": "7",
+      "tag": "0244_run_message_feedback",
+      "when": 1792799000000,
+      "breakpoints": true
     }
   ]
 }

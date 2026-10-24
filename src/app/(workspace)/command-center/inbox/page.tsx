@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { io } from "next/cache";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
@@ -47,7 +47,7 @@ async function Inbox({ searchParams }: { searchParams: Promise<Record<string, st
   // selection, matching the valid-but-unknown id path.
   const rawId = typeof query.id === "string" ? query.id : null;
   const selectedId = rawId && UUID.test(rawId) ? rawId : null;
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const kind = list.filters.kind as (typeof CAPTURE_KINDS)[number] | undefined;
   const [found, tabs, selected] = await Promise.all([

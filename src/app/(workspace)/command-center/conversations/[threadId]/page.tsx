@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { io } from "next/cache";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -14,7 +14,7 @@ export const metadata = { title: "Conversation · Polymath" };
  * Replay, cancel and checkpoints land in later slices. */
 
 async function Timeline({ threadId }: { threadId: string }) {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const conversation = await getConversation(auth, threadId);
   if (!conversation) notFound();

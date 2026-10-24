@@ -26,6 +26,27 @@ export type AuthContext = {
 };
 
 export const resolveAuthContext = cache(async (clerkUserId: string): Promise<AuthContext> => {
+  // The common path is one indexed read: an existing user with an active
+  // membership. The upsert below used to run on every request and stamp
+  // updated_at, turning every page render (and every link prefetch) into a
+  // write. Provisioning now only runs when that read finds no active
+  // membership.
+  const [active] = await db
+    .select({ userId: users.id, workspaceId: memberships.workspaceId, role: memberships.role })
+    .from(users)
+    .innerJoin(memberships, eq(memberships.userId, users.id))
+    .innerJoin(workspaces, eq(workspaces.id, memberships.workspaceId))
+    .where(
+      and(
+        eq(users.clerkUserId, clerkUserId),
+        eq(memberships.status, "active"),
+        isNull(workspaces.archivedAt),
+      ),
+    )
+    .limit(1);
+
+  if (active) return active;
+
   // Upsert rather than select-then-insert: two first requests racing on a new
   // account must land on one row, and clerk_user_id is unique for exactly this.
   const [user] = await db

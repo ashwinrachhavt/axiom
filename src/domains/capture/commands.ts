@@ -28,6 +28,7 @@ import { captures, captureSource } from "./schema";
 
 /** Fired when a URL capture lands; the handler fills the capture's text. */
 export const CAPTURE_URL_CONTENT_TOPIC = "capture.url_content_requested";
+export const CAPTURE_ENRICHMENT_TOPIC = "capture.enrichment_requested";
 
 export class ConflictError extends Error {
   readonly code = "conflict";
@@ -111,6 +112,14 @@ export async function createCapture(
             dispatchKey: `capture-url-content:${capture.id}`,
           });
         }
+        // Enrichment runs after URL content lands, so the ladder classifies
+        // the fetched reading text, not just the address.
+        await enqueueOutbox(tx, auth, {
+          topic: CAPTURE_ENRICHMENT_TOPIC,
+          payload: { captureId: capture.id },
+          dispatchKey: `capture-enrichment:${capture.id}`,
+          ...(capture.kind === "url" ? { availableAt: new Date(Date.now() + 30_000) } : {}),
+        });
         return capture;
       });
       return value;

@@ -47,8 +47,8 @@ describe("navigation", () => {
 
   it("prefers the exact destination over a prefix match", () => {
     // `/alfred` is a destination and a prefix of `/alfred/notes`. The bare
-    // root must name Assistant; the child must name Notes.
-    expect(destinationForPath("/alfred")?.label).toBe("Assistant");
+    // root must name Polymath; the child must name Notes.
+    expect(destinationForPath("/alfred")?.label).toBe("Polymath");
     expect(destinationForPath("/alfred/knowledge")?.label).toBe("Document Vault");
     // /alfred/notebook now redirects to /alfred/notes, and the breadcrumb
     // for the old address still names Notes via featureRoutes.
@@ -73,9 +73,9 @@ describe("navigation", () => {
    * product.md: a conversation is home). Order is behaviour, not styling, so it
    * gets an assertion rather than a review note.
    */
-  it("opens the rail with Assistant, then Today", () => {
+  it("opens the rail with Polymath, then Today", () => {
     expect(destinations[0].href).toBe("/alfred");
-    expect(destinations[0].label).toBe("Assistant");
+    expect(destinations[0].label).toBe("Polymath");
     expect(destinations[1].href).toBe("/command-center/briefing");
   });
 
@@ -92,7 +92,7 @@ describe("navigation", () => {
     // the route still resolves (old links keep working) but it is no longer a
     // destination.
     expect(destinations.map((destination) => destination.label)).toEqual([
-      "Assistant", "Today", "Inbox", "Work", "Notes", "Document Vault", "Notebook",
+      "Polymath", "Today", "Inbox", "Work", "Notes", "Document Vault", "Notebook",
       "Artifacts", "Skills", "People", "Companies", "Connectors",
       "Reviews", "Activity", "Settings",
     ]);

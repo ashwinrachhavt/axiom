@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Status } from "@/components/workspace/ui";
 import { getNote, listNoteBacklinks, listNoteOutlinks, listNoteTags, listNoteVersions, pageNotes, type NoteContent } from "@/domains/knowledge/notes";
@@ -41,7 +41,7 @@ export function noteMarkdown(content: NoteContent | null): string {
 const BASE = "/alfred/notes";
 
 export async function NotesSurface({ searchParams }: { searchParams: Promise<RawSearchParams> }) {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const raw = await searchParams;
   const id = typeof raw.id === "string" ? raw.id : undefined;
@@ -56,7 +56,7 @@ export async function NotesSurface({ searchParams }: { searchParams: Promise<Raw
   // "agent" means produced_by_run_id set, never a human-authorship claim.
   const EDITED_DAYS: Record<string, number> = { day: 1, week: 7, month: 30 };
   const editedDays = list.filters.edited ? EDITED_DAYS[list.filters.edited] : undefined;
-  // eslint-disable-next-line react-hooks/purity -- per-request rolling window: connection() above already opted this render out of prerendering, and the window must be evaluated at request time, not build time.
+  // eslint-disable-next-line react-hooks/purity -- per-request rolling window: io() above already opted this render out of prerendering, and the window must be evaluated at request time, not build time.
   const editedFrom = editedDays ? new Date(Date.now() - editedDays * 86_400_000) : undefined;
    
   // Area is a search-only filter like kind/edited/source, but its values are
@@ -65,7 +65,25 @@ export async function NotesSurface({ searchParams }: { searchParams: Promise<Raw
   // selection that cannot resolve - or resolves to no usable tags - must show
   // the unavailable state, never silently broaden into an unfiltered search.
   const requestedArea = typeof raw.area === "string" && raw.area.trim() ? raw.area.trim() : undefined;
-  const areaResolution = list.q && requestedArea ? await resolveSearchArea(auth, requestedArea) : undefined;
+  const tag = typeof raw.tag === "string" && raw.tag.trim() ? raw.tag.trim().toLowerCase() : undefined;
+  const kanban = list.filters.layout === "kanban";
+  // The result page, the tag facets, the search-only area options and the
+  // requested area's resolution are independent reads: issue them together.
+  const [found, allTags, areaNames, areaResolution] = await Promise.all([
+    pageNotes(auth, {
+      query: list.q,
+      draftsOnly: list.filters.view === "drafts",
+      tag,
+      // The kanban groups the whole matching set into columns, so it reads one wide page.
+      limit: kanban ? 200 : list.pageSize,
+      offset: kanban ? 0 : offsetFor(list.page, list.pageSize),
+    }),
+    listNoteTags(auth),
+    list.q ? listSearchAreaNames(auth) : [],
+    list.q && requestedArea ? resolveSearchArea(auth, requestedArea) : undefined,
+  ]);
+  if (!kanban) redirectPastEnd(BASE, raw, list.page, list.pageSize, found.total);
+  const notes = found.items;
   const resolvedArea = areaResolution?.status === "resolved" ? areaResolution : undefined;
   const searchScope: SearchScope | undefined = list.q
     ? {
@@ -91,20 +109,6 @@ export async function NotesSurface({ searchParams }: { searchParams: Promise<Raw
         to search everything.
       </div>
     ) : undefined;
-  const tag = typeof raw.tag === "string" && raw.tag.trim() ? raw.tag.trim().toLowerCase() : undefined;
-  const kanban = list.filters.layout === "kanban";
-  const found = await pageNotes(auth, {
-    query: list.q,
-    draftsOnly: list.filters.view === "drafts",
-    tag,
-    // The kanban groups the whole matching set into columns, so it reads one wide page.
-    limit: kanban ? 200 : list.pageSize,
-    offset: kanban ? 0 : offsetFor(list.page, list.pageSize),
-  });
-  if (!kanban) redirectPastEnd(BASE, raw, list.page, list.pageSize, found.total);
-  const notes = found.items;
-  const allTags = await listNoteTags(auth);
-  const areaNames = list.q ? await listSearchAreaNames(auth) : [];
   // When the requested area is unavailable the control must still show a set
   // state - rendering "All areas" while results are suppressed would imply an
   // unfiltered scope. The synthetic option is labeled generically: echoing the
@@ -114,10 +118,16 @@ export async function NotesSurface({ searchParams }: { searchParams: Promise<Raw
     ...(areaResolution?.status === "unavailable" && requestedArea ? [{ value: requestedArea, label: "Unavailable area" }] : []),
   ];
   const selected = id ? await getNote(auth, id) : null;
-  const versions = selected ? await listNoteVersions(auth, selected.id) : [];
-  const outlinks = selected ? await listNoteOutlinks(auth, selected.id) : [];
-  const backlinks = selected ? await listNoteBacklinks(auth, selected.id) : [];
-  const related = selected ? await relatedNotes(auth, selected.id) : [];
+  // The inspector's versions, links and related notes all key off the same
+  // selected note and do not depend on each other.
+  const [versions, outlinks, backlinks, related] = selected
+    ? await Promise.all([
+        listNoteVersions(auth, selected.id),
+        listNoteOutlinks(auth, selected.id),
+        listNoteBacklinks(auth, selected.id),
+        relatedNotes(auth, selected.id),
+      ])
+    : [[], [], [], []];
 
   const noteList = (
     <div className="flex flex-col gap-3">

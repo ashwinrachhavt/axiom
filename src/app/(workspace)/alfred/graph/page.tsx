@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, Screen } from "@/components/workspace/ui";
 import { listCardGraph } from "@/domains/knowledge/relations";
@@ -14,7 +14,7 @@ export const metadata = { title: "Graph · Polymath" };
  * them; select two or more and combine them into one new zettel.
  */
 async function GraphSurface({ searchParams }: { searchParams: Promise<{ focus?: string | string[] }> }) {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const all = await listCardGraph(auth);
   // Local graph: one card and its direct neighbours.

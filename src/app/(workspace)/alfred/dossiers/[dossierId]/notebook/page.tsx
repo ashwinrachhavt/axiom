@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
@@ -56,7 +56,7 @@ async function NotebookData({
   draftId?: string;
   chatId?: string;
 }) {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const dossier = await getDossierDetail(auth, dossierId);
   if (!dossier) notFound();

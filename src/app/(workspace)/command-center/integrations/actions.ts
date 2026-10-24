@@ -141,7 +141,6 @@ export async function startConnectionAction(input: { provider: string; alias?: s
       link = await createHostedConnectLink({
         provider: input.provider,
         userId: auth.workspaceId,
-        alias: account.alias,
         callbackUrl: callbackUrl.toString(),
       });
     } catch (error) {

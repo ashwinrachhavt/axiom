@@ -9,6 +9,18 @@ import type { DocumentCitation } from "@/domains/knowledge/agent-search";
 import { useChatStream, type ChatState } from "./use-chat-stream";
 import { toolGlyph } from "./provider-icon";
 import { makePending, stillPending, type PendingMessage } from "./pending-messages";
+import { MessageFeedback } from "./message-feedback";
+import { ComposerPlus, type RecordReference } from "./composer-plus";
+
+/**
+ * A live assistant block's id is `assistant:{turnId}:{stepIndex}` (see
+ * blockIdFor in stream-contract.ts); the run_event it lands in carries the
+ * same turnId, so feedback addresses the row through it.
+ */
+function turnIdOf(blockId: string): string {
+  const parts = blockId.split(":");
+  return parts.length >= 2 ? parts[1] : blockId;
+}
 
 /*
  * ChatSurface — the one chat interface.
@@ -78,7 +90,31 @@ export function ChatSurface({
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingMessage[]>([]);
+  const [attachNote, setAttachNote] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [records, setRecords] = useState<RecordReference[] | null | undefined>(undefined);
+  const [plusOpen, setPlusOpen] = useState(false);
+  const [plusQuery, setPlusQuery] = useState("");
+  useEffect(() => {
+    if (!plusOpen) return;
+    const controller = new AbortController();
+    // Fetching lands in the timeout, so every setRecords call is async from
+    // React's view — no synchronous setState inside the effect body.
+    const timer = setTimeout(() => {
+      void fetch(`/api/v1/records/search?q=${encodeURIComponent(plusQuery)}`, { signal: controller.signal })
+        .then((res) => (res.ok ? res.json() : { records: [] }))
+        .then((body: { records?: RecordReference[] }) => setRecords(body.records ?? []))
+        .catch(() => setRecords([]));
+    }, 150);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [plusOpen, plusQuery]);
+
+  function insertReference(markdown: string) {
+    setDraft((current) => (current.trim() ? `${current.trimEnd()} ${markdown} ` : `${markdown} `));
+  }
   // Set by a send: the owner's own message always scrolls into view, even when
   // they had scrolled up to reread something.
   const forceScrollRef = useRef(false);
@@ -147,6 +183,32 @@ export function ChatSurface({
     }
   }
 
+  /*
+   * Attach captures into the inbox through the same multipart route the
+   * command layer uses; the run stays text-only. The hint line reports the
+   * outcome so a capture never reads as it joining this conversation.
+   */
+  function attachFile(file: File) {
+    if (file.size > 4 * 1024 * 1024) {
+      setAttachNote("Captures are limited to 4 MB - the file was not attached.");
+      return;
+    }
+    setAttachNote(`Capturing ${file.name}…`);
+    const form = new FormData();
+    form.set("file", file);
+    void fetch("/api/v1/captures/file", { method: "POST", headers: { "idempotency-key": crypto.randomUUID() }, body: form })
+      .then(async (res) => {
+        if (!res.ok) {
+          if (res.status === 413) { setAttachNote("That file is over the 4 MB limit."); return; }
+          const problem = (await res.json().catch(() => null)) as { title?: string } | null;
+          setAttachNote(problem?.title ?? "Could not capture the file. Try again.");
+          return;
+        }
+        setAttachNote(`Captured ${file.name} to your inbox.`);
+      })
+      .catch(() => setAttachNote("Could not capture the file. Try again."));
+  }
+
   return (
     <section className={`flex min-h-0 flex-col ${className ?? ""}`} aria-label={title ?? `Chat about this ${subject.type}`}>
       {showHeader ? (
@@ -190,6 +252,9 @@ export function ChatSurface({
               ) : (
                 <div key={block.id} className="max-w-[72ch] text-[13px] leading-6">
                   <Markdown text={block.text} />
+                  {block.kind === "assistant" && block.done ? (
+                    <MessageFeedback runId={runId} turnId={turnIdOf(block.id)} initial={null} />
+                  ) : null}
                 </div>
               ),
             )}
@@ -248,12 +313,12 @@ export function ChatSurface({
         // A finished run refuses follow-ups (409 run_finished): no dead input,
         // just the honest ended state. Continuation is the page's own
         // affordance (Retry on a run, New conversation on a notebook).
-        <p className="rounded-2xl border border-border bg-muted/40 px-3.5 py-3 text-[13px] text-muted-foreground">
+        <p className="rounded-xl border border-border bg-muted/40 px-3.5 py-3 text-[13px] text-muted-foreground">
           This conversation has ended.
         </p>
       ) : (
       <form
-        className="rounded-2xl border border-border bg-card shadow-sm transition-shadow focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/40"
+        className="relative rounded-xl border border-border bg-card shadow-sm transition-shadow focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/40"
         onSubmit={(event) => {
           event.preventDefault();
           void send();
@@ -261,7 +326,7 @@ export function ChatSurface({
       >
         <Textarea
           aria-label={composerLabel}
-          className="composer-input max-h-48 min-h-[52px] resize-none rounded-none border-0 bg-transparent px-3.5 py-3 text-[13px] shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent"
+          className="composer-input max-h-48 min-h-[76px] resize-none rounded-none border-0 bg-transparent px-3.5 pt-3 pb-11 text-[13px] shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent"
           placeholder={placeholder}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
@@ -275,12 +340,32 @@ export function ChatSurface({
           }}
         />
         {sendError && (
-          <p role="alert" className="px-3.5 pb-1 text-[12px] text-destructive">
+          <p role="alert" className="absolute inset-x-3.5 bottom-11 pb-1 text-[12px] text-destructive">
             {sendError}
           </p>
         )}
-        <div className="flex items-center justify-between gap-2 px-2.5 pb-2.5">
-          <span className="px-1 text-[11px] text-muted-foreground">Enter to send · Shift+Enter for a new line</span>
+        {/*
+         * The plus sits inside the input's frame, bottom-left, like the send
+         * button sits inside it bottom-right: the composer is one surface,
+         * not a toolbar under a box.
+         */}
+        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 px-2 pb-2">
+          <div className="flex min-w-0 items-center gap-1">
+            <ComposerPlus
+              label="Add to message"
+              records={records}
+              onReference={insertReference}
+              onQueryChange={setPlusQuery}
+              onOpenChange={(open) => {
+                setPlusOpen(open);
+                if (!open) setPlusQuery("");
+              }}
+              onFile={attachFile}
+            />
+            <span className="px-1 truncate text-[11px] text-muted-foreground">
+              {attachNote ?? "Enter to send · Shift+Enter for a new line"}
+            </span>
+          </div>
           <Button
             type="submit"
             size="icon"

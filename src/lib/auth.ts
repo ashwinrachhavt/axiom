@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { auth } from "@clerk/nextjs/server";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { resolveAuthContext, type AuthContext } from "@/domains/identity/resolve";
 import { resolveCompanionToken, resolveMachineClient } from "@/domains/identity/machine";
 import { clerkConfigured, devAuthBypass } from "@/lib/clerk";
@@ -39,11 +39,12 @@ export class ForbiddenError extends Error {
 }
 
 export const getAuthContext = cache(async (): Promise<AuthContext> => {
-  // Session identity is per-request and the identity upsert stamps
-  // updatedAt with a wall-clock Date, so auth can never take part in a
-  // prerender. cacheComponents pages call connection() here once instead of
-  // each page remembering to opt itself out of prerendering.
-  await connection();
+  // Session identity is per-request, so auth can never take part in a
+  // prerender. io() suspends during prerendering like connection() did, but
+  // unlike connection() it does not block prefetches: the App Shell can still
+  // be resolved per session ahead of a click. See the io()/connection() note
+  // in Next's Cache Components docs.
+  await io();
   // Same dev fallback as getAnyAuthContext below: without Clerk keys the
   // proxy is a no-op and auth() throws. See the longer note there.
   const devFallback = !clerkConfigured || devAuthBypass;

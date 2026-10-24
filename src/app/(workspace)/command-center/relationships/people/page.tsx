@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { io } from "next/cache";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,7 @@ function avatarTint(id: string): string {
 
 async function People({ searchParams }: { searchParams: SearchParams }) {
   const query = await searchParams;
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const list = parseListParams(query, { filters: { status: RELATIONSHIP_STATUSES } });
   const status = list.filters.status as RelationshipStatus | undefined;

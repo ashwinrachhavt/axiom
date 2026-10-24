@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader, Section } from "@/components/page-header";
@@ -66,7 +66,7 @@ function LibraryList({ rows }: { rows: LibraryRow[] }) {
 }
 
 async function LibrarySurface() {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const [rows, history] = await Promise.all([listLibrary(auth), readingHistory(auth, 10)]);
 

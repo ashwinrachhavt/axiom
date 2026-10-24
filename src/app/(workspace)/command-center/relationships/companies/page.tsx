@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Suspense } from "react";
 import { redirectPastEnd } from "@/components/list/clamp";
 import { ListToolbar } from "@/components/list/list-toolbar";
@@ -24,7 +24,7 @@ const BASE = "/command-center/relationships/companies";
 
 async function Companies({ searchParams }: { searchParams: SearchParams }) {
   const query = await searchParams;
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const list = parseListParams(query);
   const page = await pageOrganizations(auth, {

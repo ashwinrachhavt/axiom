@@ -58,7 +58,6 @@ export function SideNav() {
       <Link
         key={destination.href}
         href={destination.href}
-        prefetch={true}
         aria-label={destination.label}
         title={collapsed ? destination.label : undefined}
         aria-current={active ? "page" : undefined}
@@ -169,7 +168,10 @@ export function SideNav() {
         {collapsed ? null : <kbd aria-hidden className="readout text-[11px]">⌘K</kbd>}
         </span>
 
-        {/* The product's destinations, one list. */}
+        {/* The product's destinations, one list. Default prefetch: with
+            partialPrefetching each destination's App Shell is fetched once and
+            shared. prefetch={true} would add a per-link server render for URL
+            data none of these rail links carry. */}
         <div className="mt-2 flex flex-1 flex-col gap-px">
           <div className="flex flex-col gap-px">{destinations.filter((d) => d.group !== "shared").map(itemLink)}</div>
         </div>

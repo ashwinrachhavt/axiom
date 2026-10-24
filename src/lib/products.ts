@@ -1,4 +1,4 @@
-import { Activity, BookOpen, Bot, Brain, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, CircleDot, ClipboardList, FileCheck2, FileText, FolderKanban, Gem, Grid2X2, Inbox, Layers3, Library, Lightbulb, Link2, ListTodo, Map, MessageSquare, Network, NotebookPen, PanelTop, PenLine, ScanText, Search, Settings, ShieldCheck, Timer, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
+import { Activity, BookOpen, Brain, BriefcaseBusiness, CalendarDays, ChartNoAxesCombined, CircleDot, ClipboardList, FileCheck2, FileText, FolderKanban, Gem, Grid2X2, Inbox, Layers3, Library, Lightbulb, Link2, ListTodo, Map, MessageSquare, Network, NotebookPen, PanelTop, PenLine, ScanText, Search, Settings, ShieldCheck, Timer, Users, Wallet, Workflow, type LucideIcon } from "lucide-react";
 
 export type ProductId = "command-center" | "neuralflow" | "alfred";
 export type ProductDestination = { slug: string; label: string; icon: LucideIcon; group: string; description: string };
@@ -15,8 +15,6 @@ export const products: Product[] = [
     { slug: "documents", label: "Document vault", icon: ScanText, group: "Workspace", description: "Intake, classify and preserve originals" },
     { slug: "writing", label: "Writing studio", icon: PenLine, group: "Workspace", description: "Draft and checkpoint canonical notes" },
     { slug: "spaces", label: "Spaces", icon: Layers3, group: "Workspace", description: "Operational context and project outcomes" },
-    { slug: "agents", label: "Agents & runs", icon: Bot, group: "Supervision", description: "Inspect visible steps, artifacts and costs" },
-    { slug: "conversations", label: "Conversations", icon: MessageSquare, group: "Supervision", description: "Threads and checkpoints" },
     { slug: "memory", label: "Reviewed memory", icon: Brain, group: "Supervision", description: "Review personal fact assertions" },
     { slug: "reviews", label: "Reviews", icon: ShieldCheck, group: "Supervision", description: "Inspect exact payloads before external writes" },
     { slug: "spending", label: "Spending", icon: Wallet, group: "System", description: "Reservations, rate cards and caps" },

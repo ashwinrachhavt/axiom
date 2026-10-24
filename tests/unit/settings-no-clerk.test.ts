@@ -15,7 +15,7 @@ import { renderToStaticMarkup } from "react-dom/server";
  */
 
 vi.mock("next/server", () => ({ connection: async () => undefined }));
-vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), io: async () => undefined }));
 vi.mock("@/lib/clerk", () => ({ clerkConfigured: false, devAuthBypass: false }));
 vi.mock("@/lib/auth", () => ({
   getAuthContext: vi.fn(async () => {

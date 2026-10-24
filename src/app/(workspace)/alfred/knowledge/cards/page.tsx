@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, Panel, Screen, Status } from "@/components/workspace/ui";
 import { cardHeaderStats, listCardSources, pageCards, type CardStateFilter } from "@/domains/knowledge/card-queries";
@@ -40,7 +40,7 @@ function stateLabel(item: { state: string; lastOutcome: string | null }): string
 }
 
 async function CardsSurface({ searchParams }: { searchParams: Promise<RawSearchParams> }) {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const raw = await searchParams;
   const list = parseListParams(raw, { defaultPageSize: 24 });

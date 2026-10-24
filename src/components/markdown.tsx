@@ -93,8 +93,8 @@ export const Markdown = memo(function Markdown({ text }: { text: string }) {
       }
       const ListTag = ordered ? "ol" : "ul";
       blocks.push(
-        <ListTag key={key++} className={`my-1 flex flex-col gap-0.5 pl-5 ${ordered ? "list-decimal" : "list-disc"}`}>
-          {items.map((item, j) => <li key={j}>{inline(item)}</li>)}
+        <ListTag key={key++} className={`my-1 flex flex-col gap-0.5 ${ordered ? "list-decimal pl-7 marker:text-muted-foreground marker:font-normal" : "list-disc pl-5"}`}>
+          {items.map((item, j) => <li key={j} className={ordered ? "pl-1" : undefined}>{inline(item)}</li>)}
         </ListTag>,
       );
       continue;

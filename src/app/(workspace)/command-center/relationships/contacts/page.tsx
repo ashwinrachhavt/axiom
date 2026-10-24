@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { io } from "next/cache";
 import Link from "next/link";
 import { listCorrespondence } from "@/domains/crm/correspondence";
 import { Suspense } from "react";
@@ -58,7 +58,7 @@ function first(value: string | string[] | undefined): string | undefined {
 
 async function Relationships({ searchParams }: { searchParams: SearchParams }) {
   const query = await searchParams;
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const list = parseListParams(query, { filters: { status: RELATIONSHIP_STATUSES } });
   const q = list.q || undefined;

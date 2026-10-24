@@ -16,7 +16,7 @@ vi.mock("@/components/products/command-center/settings", () => ({
   default: (props: unknown) => settingsProps.fn(props),
 }));
 vi.mock("next/server", () => ({ connection: async () => undefined }));
-vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn(), io: async () => undefined }));
 
 const clerk = vi.hoisted(() => ({ clerkConfigured: true }));
 vi.mock("@/lib/clerk", () => clerk);

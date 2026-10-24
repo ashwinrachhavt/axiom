@@ -5,7 +5,7 @@ import { destinationForPath, destinations, moreDestination } from "@/lib/navigat
 import { cn } from "cn";
 
 /*
- * The phone bottom bar: Assistant, Today, Work, Notebook, and More — the
+ * The phone bottom bar: Polymath, Today, Work, Notebook, and More — the
  * destinations a thumb reaches for most — with the full list behind More.
  * Wired by href, not label, because /alfred/dossiers is the Notebook
  * destination while the rail's Notes destination lives at /alfred/notes.
@@ -33,7 +33,6 @@ export function MobileNav() {
           <Link
             key={href}
             href={href}
-            prefetch={true}
             aria-label={label}
             aria-current={active ? "page" : undefined}
             className={cn(

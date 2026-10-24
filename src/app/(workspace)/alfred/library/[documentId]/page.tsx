@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { notFound } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
@@ -20,7 +20,7 @@ export const metadata = { title: "Read · Polymath" };
  */
 
 async function ReaderSurface({ documentId }: { documentId: string }) {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const doc = await getReadableDocument(auth, documentId);
   if (!doc) notFound();

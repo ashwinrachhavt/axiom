@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Suspense } from "react";
 import { Empty, Panel, Screen, Stat, Status } from "@/components/workspace/ui";
 import { getRewardsOverview, pickRewardAnnouncement, type RewardsOverview } from "@/domains/gamification/queries";
@@ -42,7 +42,7 @@ export function LedgerEntry({ entry }: { entry: LedgerRow }) {
 }
 
 async function Rewards() {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const overview = await getRewardsOverview(auth);
   const announcement = pickRewardAnnouncement(overview.ledger, new Date());

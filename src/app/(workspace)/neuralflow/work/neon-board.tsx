@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Empty, Panel, Screen } from "@/components/workspace/ui";
 import { getAuthContext } from "@/lib/auth";
 import { WORK_PRIORITIES, type WorkRow } from "@/domains/work/queries";
@@ -24,7 +24,7 @@ const lanes: { id: WorkRow["status"]; label: string }[] = [
 ];
 
 export async function NeonBoard({ raw = {} }: { raw?: RawSearchParams }) {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const list = parseListParams(raw, { filters: { priority: WORK_PRIORITIES } });
   const filtered = Boolean(list.q || list.filters.priority);

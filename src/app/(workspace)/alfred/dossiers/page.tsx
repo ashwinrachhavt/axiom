@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader, Section } from "@/components/page-header";
@@ -28,7 +28,7 @@ export async function DossiersSurface({
 }: {
   searchParams: Promise<RawSearchParams>;
 }) {
-  await connection();
+  await io();
   if (!process.env.DATABASE_URL?.trim()) {
     return (
       <>

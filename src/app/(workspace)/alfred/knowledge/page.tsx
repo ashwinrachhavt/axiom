@@ -18,7 +18,7 @@ import {
 } from "@/domains/knowledge/queries";
 import { resolvePartyCandidates } from "@/domains/knowledge/parties";
 import { Suspense } from "react";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   CheckCircle2,
@@ -86,7 +86,7 @@ export async function KnowledgeSurface({
   searchParams: Promise<RawSearchParams>;
 }) {
   // Per-request data; streams inside the Suspense boundary below.
-  await connection();
+  await io();
   if (!process.env.DATABASE_URL?.trim()) {
     return (
       <>

@@ -1,10 +1,11 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Markdown } from "@/components/markdown";
 import { ChatCancel, ChatSurface } from "@/components/chat/chat-surface";
+import { MessageFeedback } from "@/components/chat/message-feedback";
 import { getAuthContext } from "@/lib/auth";
 import { timeAgo } from "@/lib/time";
 import { getRun, getRunUsage, type RunUsage } from "@/domains/agents/queries";
@@ -41,7 +42,7 @@ function costLabel(usage: RunUsage | null, finished: boolean): string | null {
 }
 
 async function ConversationSurface({ runId }: { runId: string }) {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   // A malformed id would reach Postgres as a uuid cast error and 500; the API
   // route answers 404 for it, and this page must answer the same.
@@ -74,7 +75,7 @@ async function ConversationSurface({ runId }: { runId: string }) {
        * stays because app screens always name what they show; everything else
        * about the run is in Details.
        */}
-      <header className="page-header border-border bg-background/95 sticky top-12 z-10 border-b backdrop-blur">
+      <header className="page-header border-border bg-background/95 sticky top-0 z-10 border-b backdrop-blur">
         <div className="mx-auto flex w-full max-w-[var(--page-width)] items-center gap-3">
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-[14px] leading-tight font-medium">{run.objective}</h1>
@@ -119,6 +120,7 @@ async function ConversationSurface({ runId }: { runId: string }) {
                 ) : entry.kind === "assistant" ? (
                   <div key={entry.sequence} className="max-w-[72ch] text-[13px] leading-6">
                     <Markdown text={entry.text} />
+                    <MessageFeedback runId={run.id} sequence={entry.sequence} initial={entry.feedback ?? null} />
                   </div>
                 ) : entry.kind === "reasoning" ? (
                   // The model's visible rationale, kept from the live stream. A
@@ -164,7 +166,7 @@ async function ConversationSurface({ runId }: { runId: string }) {
 
 /*
  * A Suspense boundary is required, not decorative: `cacheComponents` refuses to
- * prerender a route that awaits `connection()` outside one, and the workspace
+ * prerender a route that awaits `io()` outside one, and the workspace
  * group's loading.tsx shell does not count. The fallback matches the shell so a
  * navigation does not flash a second skeleton.
  */

@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { io } from "next/cache";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,7 @@ function TaskRow({ task, outcomeTag, mode }: { task: BriefingTask; outcomeTag: s
 }
 
 async function Briefing() {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const briefing = await getBriefingForPage(auth);
   const outcomeTag = `Outcome:${briefing.today}`;

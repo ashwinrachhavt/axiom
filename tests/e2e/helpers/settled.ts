@@ -10,7 +10,18 @@ import { expect, type Page } from "@playwright/test";
  */
 export async function waitSettled(page: Page, landmarks: { capture?: boolean; heading?: string } = {}) {
   // Hydration: the header search is disabled until the client store hydrates.
-  if (landmarks.capture !== false) await expect(page.getByRole("button", { name: "Search workspace", exact: true })).toBeEnabled();
+  // The /alfred/* destinations render headerless (b5b1d26: the conversation is
+  // home), so their shell holds no search trigger at all — a trigger that
+  // never appears would hang this wait forever there. Wait only when one is
+  // actually in the DOM; the rail's copy sits in a `hidden md:block` nav, so
+  // below md only the topbar's copy exists, and on a headerless page neither
+  // does.
+  if (landmarks.capture !== false) {
+    const trigger = page.getByRole("button", { name: "Search workspace", exact: true });
+    if (await trigger.count()) {
+      await expect(trigger.first()).toBeEnabled();
+    }
+  }
   // Async client-only surfaces (the Notebook rich editor toolbar mounts
   // through immediatelyRender: false) hold disabled buttons a frame longer.
   if (landmarks.heading) await expect(page.getByRole("button", { name: landmarks.heading, exact: true })).toBeEnabled();

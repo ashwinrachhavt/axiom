@@ -320,7 +320,7 @@ export default function Settings({ serverPreferences, capabilities, serverAssist
         <Section id="model-policy">
           <Panel title="Model and tool policy" description="Profile, model routing and tool allowlists are server-owned.">
             <Unavailable feature="Assistant profile and tool policy">Model choice, reasoning effort, allowed tools and per-run budgets are captured server-side when a run starts. Nothing on this screen can widen them.</Unavailable>
-            <div className="mt-4 flex flex-wrap gap-2"><Destination screen="agents">Assistant profile</Destination><Destination screen="spending">Spending policy</Destination></div>
+            <div className="mt-4 flex flex-wrap gap-2"><Destination screen="reviews">External action reviews</Destination><Destination screen="spending">Spending policy</Destination></div>
           </Panel>
         </Section>
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Empty, Screen } from "@/components/workspace/ui";
 import { getWikiPageText } from "@/domains/knowledge/wiki";
 import { getAuthContext } from "@/lib/auth";
@@ -17,7 +17,7 @@ export const metadata = { title: "Wiki page · Polymath" };
 
 export default async function WikiArtifactPage({ params }: { params: Promise<{ artifactId: string }> }) {
   const { artifactId } = await params;
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const page = await getWikiPageText(auth, artifactId);
 

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
 import { getAuthContext } from "@/lib/auth";
@@ -17,7 +17,7 @@ export const metadata = { title: "Files · Polymath" };
  */
 
 async function FilesSurface() {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const [page, folders] = await Promise.all([getExplorerPage(auth, { sort: "added", limit: 100 }), listFolders(auth)]);
   return <FileExplorer initialRows={page.rows} initialCursor={page.nextCursor} total={page.total} folders={folders} />;

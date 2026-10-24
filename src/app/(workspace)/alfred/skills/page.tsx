@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state";
@@ -62,7 +62,7 @@ export async function SkillsSurface({
 }: {
   searchParams?: Promise<RawSearchParams>;
 } = {}) {
-  await connection();
+  await io();
   if (!process.env.DATABASE_URL?.trim()) {
     return (
       <>

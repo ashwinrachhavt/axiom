@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAuthContext } from "@/lib/auth";
 import { isWorkspaceOnboarded } from "@/domains/agents/onboarding";
@@ -12,7 +12,7 @@ export const metadata = { title: "Meet your agent · Polymath" };
  * layout gate and e2e can name.
  */
 export default async function OnboardingPage() {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   if (await isWorkspaceOnboarded(auth.workspaceId)) {
     redirect("/alfred");

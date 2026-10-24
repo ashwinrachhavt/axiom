@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { notFound } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +40,7 @@ const installedAt = new Intl.DateTimeFormat("en", {
 });
 
 async function SkillSurface({ skillId }: { skillId: string }) {
-  await connection();
+  await io();
   // A hand-edited URL reaches Postgres as a cast; refuse it here so a bad id is
   // a 404 rather than a database error the person cannot act on.
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(skillId)) notFound();

@@ -465,6 +465,8 @@ export const runEvents = pgTable(
     sequence: integer("sequence").notNull(),
     type: text("type").notNull(),
     data: jsonb("data"),
+    /** The owner's like/dislike on a message event; null when not yet given. */
+    feedback: text("feedback"),
     ...recorded,
   },
   (t) => [uniqueIndex("run_events_run_sequence_key").on(t.runId, t.sequence)],

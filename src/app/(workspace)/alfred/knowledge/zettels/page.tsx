@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { connection } from "next/server";
+import { io } from "next/cache";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, Panel, Screen } from "@/components/workspace/ui";
 import { listNoteTags } from "@/domains/knowledge/notes";
@@ -153,7 +153,7 @@ function DictionaryView({ cards, raw }: { cards: ZettelCardItem[]; raw: RawSearc
 }
 
 export async function ZettelsSurface({ searchParams }: { searchParams: Promise<RawSearchParams> }) {
-  await connection();
+  await io();
   const auth = await getAuthContext();
   const raw = await searchParams;
   const list = parseListParams(raw, { defaultPageSize: 24 });
