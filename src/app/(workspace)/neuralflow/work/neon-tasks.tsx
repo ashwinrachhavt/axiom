@@ -197,6 +197,7 @@ export async function NeonTasks({
                 title: detail.task.title,
                 description: detail.task.description,
                 status: detail.task.status,
+                rationale: detail.task.rationale,
                 priority: detail.task.priority,
                 dueDate: detail.task.dueAt ? detail.task.dueAt.toISOString().slice(0, 10) : null,
                 estimateMinutes: detail.task.estimateMinutes,

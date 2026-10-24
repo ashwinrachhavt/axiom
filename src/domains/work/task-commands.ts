@@ -57,6 +57,7 @@ export type TaskPatch = {
   description?: string | null;
   status?: Status;
   priority?: Priority;
+  rationale?: string | null; // null clears; absent leaves it untouched
   dueAt?: string | null; // ISO; null clears
   estimateMinutes?: number | null;
   tags?: string[];
@@ -126,6 +127,7 @@ export async function updateTask(
         version: sql`${tasks.version} + 1`,
       };
       if (p.title !== undefined) set.title = p.title;
+      if (p.rationale !== undefined) set.rationale = p.rationale;
       if (p.description !== undefined) set.description = p.description;
       if (p.priority !== undefined) set.priority = p.priority;
       if (p.dueAt !== undefined) set.dueAt = p.dueAt === null ? null : new Date(p.dueAt);

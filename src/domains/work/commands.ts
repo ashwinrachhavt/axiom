@@ -43,6 +43,7 @@ export async function createTask(
   input: {
     title: string;
     description?: string;
+    rationale?: string;
     dueAt?: Date;
     priority?: (typeof tasks.$inferSelect)["priority"];
     estimateMinutes?: number;
@@ -73,6 +74,7 @@ export async function createTask(
       workspaceId: auth.workspaceId,
       title: input.title,
       description: input.description ?? null,
+      rationale: input.rationale ?? null,
       dueAt: input.dueAt ?? null,
       ...(input.priority ? { priority: input.priority } : {}),
       ...(input.estimateMinutes ? { estimateMinutes: input.estimateMinutes } : {}),
@@ -108,6 +110,7 @@ export async function createOwnerTask(
   auth: AuthContext,
   input: {
     title: string;
+    rationale?: string;
     dueAt?: Date;
     priority?: (typeof tasks.$inferSelect)["priority"];
     estimateMinutes?: number;
@@ -151,6 +154,7 @@ export async function createOwnerTask(
       auth,
       {
         title: input.title,
+        rationale: input.rationale,
         dueAt: input.dueAt,
         priority: input.priority,
         estimateMinutes: input.estimateMinutes,

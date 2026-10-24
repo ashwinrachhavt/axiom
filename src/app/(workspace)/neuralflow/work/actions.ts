@@ -59,6 +59,7 @@ async function authorize(): Promise<AuthContext> {
 
 const createInput = z.object({
   title: z.string().trim().min(1).max(300),
+  rationale: z.string().trim().max(500, "Keep the reason under 500 characters.").optional(),
   dueAt: z.coerce.date().optional(),
   priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
   estimateMinutes: z.number().int().min(1).max(1440).optional(),
@@ -70,6 +71,7 @@ const createInput = z.object({
 
 export async function createTaskAction(input: {
   title: string;
+  rationale?: string;
   dueAt?: string;
   priority?: "low" | "medium" | "high" | "urgent";
   estimateMinutes?: number;
@@ -232,6 +234,7 @@ const patchInput = z.object({
     .object({
       title: z.string().trim().min(1).max(300),
       description: z.string().max(20_000).nullable(),
+      rationale: z.string().trim().max(500, "Keep the reason under 500 characters.").nullable(),
       status: z.enum(["inbox", "backlog", "ready", "in_progress", "waiting", "done", "cancelled"]),
       priority: z.enum(["none", "low", "medium", "high", "urgent"]),
       dueAt: z.string().datetime().nullable(),

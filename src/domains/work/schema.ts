@@ -138,6 +138,8 @@ export const tasks = pgTable(
     }),
     title: text("title").notNull(),
     description: text("description"),
+    /** Why the task is on the list (spec: "rationale"; story: "I can see why I added this task three weeks ago"). Optional and honest - null means none recorded, never a placeholder. */
+    rationale: text("rationale"),
     status: taskStatus("status").notNull().default("inbox"),
     priority: taskPriority("priority").notNull().default("none"),
     /** Fractional rank for list and board order; a drag writes one row. */

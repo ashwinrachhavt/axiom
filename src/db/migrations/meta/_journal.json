@@ -484,6 +484,13 @@
       "tag": "0242_reward_ledger_note",
       "when": 1792757100000,
       "breakpoints": true
+    },
+    {
+      "idx": 243,
+      "version": "7",
+      "tag": "0243_task_rationale",
+      "when": 1792802368617,
+      "breakpoints": true
     }
   ]
 }

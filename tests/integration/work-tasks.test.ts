@@ -56,6 +56,34 @@ suite("work tasks", () => {
     expect(row.version).toBe(2);
   });
 
+  it("carries why the task is on the list: set at create, edited, cleared, never invented", async () => {
+    const { userId, workspaceId } = await seedWorkspace(db, `task-rationale-${Date.now()}`);
+    const a = ownerAuth(userId, workspaceId);
+    const taskCommands = await import("@/domains/work/task-commands");
+
+    // No rationale at create means null - the surface shows nothing, never a placeholder.
+    const plain = await work.createOwnerTask(a, { title: "Plain task" });
+    const readRationale = async (taskId: string) =>
+      (await db.select({ rationale: tasks.rationale }).from(tasks).where(eq(tasks.id, taskId)).limit(1))[0]?.rationale;
+    expect(await readRationale(plain.id)).toBeNull();
+
+    const { id } = await work.createOwnerTask(a, {
+      title: "Renew the passport",
+      rationale: "Expires in March and the trip is in May",
+    });
+    expect(await readRationale(id)).toBe("Expires in March and the trip is in May");
+
+    // An unrelated patch leaves the rationale untouched (the !== undefined guard).
+    const untouched = await taskCommands.updateTask(a, { taskId: id, expectedVersion: 1, patch: { priority: "high" } });
+    expect(await readRationale(id)).toBe("Expires in March and the trip is in May");
+
+    // Edit, then clear with null.
+    const edited = await taskCommands.updateTask(a, { taskId: id, expectedVersion: untouched.version, patch: { rationale: "Trip moved to September; renewal window is tighter" } });
+    expect(await readRationale(id)).toBe("Trip moved to September; renewal window is tighter");
+    await taskCommands.updateTask(a, { taskId: id, expectedVersion: edited.version, patch: { rationale: null } });
+    expect(await readRationale(id)).toBeNull();
+  });
+
   it("links a task to a person and an organization", async () => {
     const { userId, workspaceId } = await seedWorkspace(db, `task-links-${Date.now()}`);
     const a = ownerAuth(userId, workspaceId);
